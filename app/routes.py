@@ -9,14 +9,19 @@ from app.cache_config import cache
 
 main = Blueprint("main", __name__)
 
-ALLOWED_IPS = os.getenv('ALLOWED_IPS').split(',')
+ALLOWED_DOMAINS = os.getenv('ALLOWED_DOMAINS', '').split(',')
 
 @main.before_request
-def limit_remote_addr():
+def limit_remote_domain():
     """
-    Limit access for allowed Ips
+    Limit access for allowed domains
     """
-    if request.remote_addr not in ALLOWED_IPS:
+    referrer = request.referrer
+    if referrer:
+        referrer_domain = referrer.split('//')[1].split('/')[0]
+        if referrer_domain not in ALLOWED_DOMAINS:
+            return jsonify({"error": "Forbidden"}), 403
+    else:
         return jsonify({"error": "Forbidden"}), 403
 
 @main.route("/endpoint/like", methods=["POST"])
